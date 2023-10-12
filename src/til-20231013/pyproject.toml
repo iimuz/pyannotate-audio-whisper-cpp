@@ -9,7 +9,9 @@ urls = {repository = "https://github.com/iimuz/til/src/til-20231013"}
 version = "1.0.0"
 
 dependencies = [
-  "pyannote.audio"
+  "pyannote.audio",
+  "pydantic",
+  "pydub",
 ]
 
 [tools.setuptools.package-dir]
