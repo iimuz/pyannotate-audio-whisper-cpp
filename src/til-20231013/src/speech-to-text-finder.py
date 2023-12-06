@@ -1,4 +1,4 @@
-"""pyannote-audio v3を利用して話者分離を実施する."""
+"""フォルダ内を探索して音声ファイルに対して文字起こしを実施する."""
 import logging
 import sys
 from argparse import ArgumentParser
@@ -188,7 +188,8 @@ def _setup_logger(
     -----
     ファイル出力とコンソール出力を行うように設定する。
     """
-    lib_logger = logging.getLogger(f"internal")
+    script_path = Path(__file__)
+    lib_logger = logging.getLogger(f"src.{script_path.stem}")
 
     _logger.setLevel(loglevel)
     lib_logger.setLevel(loglevel)

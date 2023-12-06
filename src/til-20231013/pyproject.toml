@@ -9,6 +9,7 @@ urls = {repository = "https://github.com/iimuz/til/src/til-20231013"}
 version = "1.0.0"
 
 dependencies = [
+  "onnxruntime",  # pyannote.audioでemmbedingモデルによっては必要になる
   "pyannote.audio",
   "pydantic",
   "pydub",
