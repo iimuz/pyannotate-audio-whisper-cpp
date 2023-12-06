@@ -1,5 +1,4 @@
 """pyannote-audio v3を利用して話者分離を実施する."""
-import json
 import logging
 import os
 import re
@@ -79,6 +78,45 @@ class _SpeakerSegmentFile:
             return
 
         self._filepath.unlink()
+
+
+class _ConvertToWavFile:
+    """指定したファイルをwav 16bitに変換する."""
+
+    def __init__(self, output_dir: Path) -> None:
+        self._output_dir = output_dir
+
+    def convert(self, filepath: Path) -> Path:
+        output_filepath = self._output_dir / f"{filepath.stem}.wav"
+        command_args = [
+            "ffmpeg",
+            "-i",
+            f"{str(filepath.resolve())}",
+            "-ar",
+            "16000",
+            "-c:a",
+            "pcm_s16le",
+            str(output_filepath.resolve()),
+        ]
+        proc = subprocess.Popen(
+            command_args,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        try:
+            result, error = proc.communicate(timeout=300)
+            if proc.returncode != 0:
+                _logger.error(f"command failed with exit status {proc.returncode}")
+                _logger.error(error)
+                raise ValueError("error converting to wav file.")
+        except Exception:
+            proc.kill()
+            raise
+        _logger.info(f"stdout: {result}")
+        _logger.warning(f"stderr: {result}")
+
+        return output_filepath
 
 
 class _SpeakerSeperator:
@@ -313,7 +351,7 @@ class _SpeechTextFile:
         self._filepath.unlink()
 
 
-class _SpeechTextMarkdown:
+class _SpeechTextWriter:
     """書き起こした文字をテキストで保存する."""
 
     def __init__(self, filepath: Path) -> None:
@@ -370,6 +408,13 @@ def _main() -> None:
     processed_dir.mkdir(exist_ok=True)
     model_config_filepath = raw_dir / "config.yaml"
 
+    # wavファイルへの変更
+    target_filepath = config.filepath
+    if target_filepath.suffix != ".wav":
+        _logger.info(f"convert to wav file: {target_filepath.name}")
+        convert_to_wavfile = _ConvertToWavFile(output_dir=interim_dir)
+        target_filepath = convert_to_wavfile.convert(target_filepath)
+
     # 話者分離情報の取得
     _logger.info("calc speaker segment ...")
     speaker_segment_file = _SpeakerSegmentFile(
@@ -382,7 +427,7 @@ def _main() -> None:
         speaker_seperator = _SpeakerSeperator(
             config_path=model_config_filepath, device_name=config.device
         )
-        for segment in speaker_seperator.diarization(wav_filepath=config.filepath):
+        for segment in speaker_seperator.diarization(wav_filepath=target_filepath):
             _logger.info(
                 f"[{segment.start_time:03.1f}s - {segment.end_time:03.1f}s]"
                 f" {segment.speaker_name}"
@@ -414,7 +459,7 @@ def _main() -> None:
         speech_text_file.clean()
     speaker_text_list = speech_text_file.get_segment_list()
     if len(speaker_text_list) < 1:
-        sound: AudioSegment = AudioSegment.from_wav(config.filepath)
+        sound: AudioSegment = AudioSegment.from_wav(target_filepath)
         speech_to_text = _SpeechToText(
             wav_dirpath=interim_dir,
             whisper_cpp_path=Path("whisper.cpp"),
@@ -439,7 +484,9 @@ def _main() -> None:
         speech_integrate_file.save(integrated_text)
 
     # ファイル出力
-    speech_md_file = _SpeechTextMarkdown(filepath=(processed_dir / "speech.md"))
+    speech_md_file = _SpeechTextWriter(
+        filepath=(processed_dir / f"{target_filepath.stem}.txt")
+    )
     if config.force:
         speech_md_file.clean()
     speech_md_file.save(integrated_text)
