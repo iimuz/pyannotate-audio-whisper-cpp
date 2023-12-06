@@ -104,8 +104,7 @@ def _setup_logger(
     -----
     ファイル出力とコンソール出力を行うように設定する。
     """
-    script_path = Path(__file__)
-    lib_logger = logging.getLogger(f"src.{script_path.stem}")
+    lib_logger = logging.getLogger(f"interim")
 
     _logger.setLevel(loglevel)
     lib_logger.setLevel(loglevel)

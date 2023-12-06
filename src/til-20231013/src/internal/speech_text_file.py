@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseModel, RootModel
+from pydantic import RootModel
 
 from internal.speaker_text import SpeakerText
 

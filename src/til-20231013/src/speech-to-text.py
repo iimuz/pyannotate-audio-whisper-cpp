@@ -188,7 +188,7 @@ def _setup_logger(
     -----
     ファイル出力とコンソール出力を行うように設定する。
     """
-    lib_logger = logging.getLogger(f"internal")
+    lib_logger = logging.getLogger("internal")
 
     _logger.setLevel(loglevel)
     lib_logger.setLevel(loglevel)

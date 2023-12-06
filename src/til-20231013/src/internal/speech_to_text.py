@@ -56,7 +56,7 @@ class SpeechToText:
                 text=text,
             )
             speaker_text_list.append(speaker_text)
-            _logger.info(
+            _logger.debug(
                 f"[{segment.start_time:03.1f}s - {segment.end_time:03.1f}s]"
                 f" {segment.speaker_name} : {text}"
             )
