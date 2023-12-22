@@ -37,7 +37,6 @@ def _main() -> None:
     script_filepath = Path(__file__)
     log_filepath = (
         Path("data/interim")
-        / script_filepath.parent.name
         / f"{script_filepath.stem}.log"
     )
     log_filepath.parent.mkdir(exist_ok=True)
@@ -52,7 +51,7 @@ def _main() -> None:
 
     # ファイルのダウンロード
     src_config_path = hf_hub_download(
-        repo_id="pyannote/speaker-diarization-3.0",
+        repo_id="pyannote/speaker-diarization-3.1",
         filename="config.yaml",
         use_auth_token=HF_TOKEN,
     )
