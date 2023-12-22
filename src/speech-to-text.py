@@ -123,7 +123,7 @@ def _main() -> None:
         speech_to_text = SpeechToText(
             wav_dirpath=interim_dir,
             whisper_cpp_path=Path("whisper.cpp"),
-            model_name="large",
+            model_name="large-v3",
         )
         speaker_text_list = speech_to_text.to_text(
             sound=sound, segments=integrated_segments
