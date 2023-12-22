@@ -1,7 +1,7 @@
 ---
 title: pyannote-audioとWhisper.cppを利用した音声からのテキスト書き起こし
 date: 2023-10-11
-lastmod: 2023-12-07
+lastmod: 2023-12-22T17:24:53+09:00
 ---
 
 ## 概要
@@ -47,6 +47,18 @@ pip install -e .[dev,test]
 
 # freeze version
 pip freeze > requirements.txt
+```
+
+## whisper.cpp環境の構築
+
+whisper.cppの環境はあらかじめ作成されていることを想定している。
+基本的には、本リポジトリ直下にwhisper.cppリポジトリをクローンして、バイナリをmakeしていることを想定している。
+whisper.cppの環境構築については、[iimuz/whisper-cpp-sample](https://github.com/iimuz/whisper-cpp-sample)で行なった方法を利用している。
+
+```sh
+git clone https://github.com/ggerganov/whisper.cpp.git
+cd whisper.cpp
+# whisper.cppの環境構築
 ```
 
 ## code style
