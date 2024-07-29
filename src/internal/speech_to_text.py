@@ -84,7 +84,7 @@ class SpeechToText:
             stderr=subprocess.PIPE,
         )
         try:
-            result, error = proc.communicate(timeout=300)
+            result, error = proc.communicate(timeout=1800)
             if proc.returncode != 0:
                 _logger.error(f"command failed with exit status {proc.returncode}")
                 _logger.error(error)

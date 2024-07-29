@@ -8,10 +8,8 @@ from logging import Formatter, StreamHandler
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from pydantic import BaseModel
-from pydub import AudioSegment
-
 from internal import (
+    ConvertToMp4File,
     ConvertToWavFile,
     SpeakerIntegrator,
     SpeakerSegment,
@@ -23,6 +21,8 @@ from internal import (
     SpeechTextWriter,
     SpeechToText,
 )
+from pydantic import BaseModel
+from pydub import AudioSegment
 
 _logger = logging.getLogger(__name__)
 
@@ -74,11 +74,19 @@ def _calc_speaker_segment(
     return speaker_segments
 
 
-def _convert_to_wav_file(source_filepath: Path, output_dir: Path) -> Path:
-    """wavファイルへ変換し、変換後のファイルパスを返す."""
-    if source_filepath.suffix == ".wav":
+def _convert_to_mp4_file(source_filepath: Path, output_dir: Path) -> Path:
+    """mp4ファイルへ変換し、変換後のファイルパスを返す."""
+    if source_filepath.suffix == ".mp4":
         return source_filepath
 
+    convert_to_mp4file = ConvertToMp4File(output_dir=output_dir)
+    target_filepath = convert_to_mp4file.convert(source_filepath)
+
+    return target_filepath
+
+
+def _convert_to_wav_file(source_filepath: Path, output_dir: Path) -> Path:
+    """wavファイルへ変換し、変換後のファイルパスを返す."""
     convert_to_wavfile = ConvertToWavFile(output_dir=output_dir)
     target_filepath = convert_to_wavfile.convert(source_filepath)
 
@@ -127,8 +135,14 @@ def _main() -> None:
     _setup_logger(log_filepath, loglevel=loglevel)
     _logger.info(config)
 
-    filepath_list = config.root_dir.glob("**/*.mp4")
+    filepath_list = config.root_dir.glob("**/*")
+    allowed_suffix = [".mp4", ".mkv"]
     for filepath in filepath_list:
+        # 特定拡張子のファイルのみ処理対象とする
+        if filepath.is_dir():
+            continue
+        if filepath.suffix not in allowed_suffix:
+            continue
         _logger.info(f"target file: {filepath}")
 
         # データフォルダ
@@ -144,7 +158,7 @@ def _main() -> None:
         # 出力ファイル情報
         segment_filepath = interim_dir / "speaker_segment.json"
         speaker_segment_filepath = interim_dir / "speaker_segment_integrate.json"
-        speach_text_filepath = interim_dir / "speech_text.json"
+        speech_text_filepath = interim_dir / "speech_text.json"
         integrated_text_filepath = interim_dir / "speech_integrate_text.json"
         result_filepath = processed_dir / f"{filepath.stem}.txt"
         dst_filepath = filepath.parent / f"{filepath.stem}.txt"
@@ -154,6 +168,12 @@ def _main() -> None:
             _logger.info("speech text is already exist. skip.")
             continue
 
+        # mp4ファイルへの変更
+        _logger.info(f"convert to mp4 file: {filepath.name}")
+        filepath_internal_mp4 = _convert_to_mp4_file(filepath, interim_dir)
+        if filepath_internal_mp4 != filepath:
+            filepath_mp4 = filepath.parent / filepath_internal_mp4.name
+            filepath_internal_mp4.rename(filepath_mp4)
         # wavファイルへの変更
         _logger.info(f"convert to wav file: {filepath.name}")
         target_filepath = _convert_to_wav_file(filepath, interim_dir)
@@ -178,17 +198,22 @@ def _main() -> None:
         speech_text_list = _speach_to_text(
             wav_fileapth=target_filepath,
             speaker_segments=integrated_segements,
-            speech_text_filepath=speach_text_filepath,
+            speech_text_filepath=speech_text_filepath,
             temp_dir=interim_dir,
             force=config.force,
         )
         # 冗長なテキストなどの除去
         _logger.info("integrate text ...")
-        integrated_text = _remove_redundant_text(
-            speaker_texts=speech_text_list,
-            save_filepath=integrated_text_filepath,
-            force=config.force,
-        )
+        try:
+            integrated_text = _remove_redundant_text(
+                speaker_texts=speech_text_list,
+                save_filepath=integrated_text_filepath,
+                force=config.force,
+            )
+        except Exception:
+            message = "Unexpected error occurred while integrating text. skip this file."
+            _logger.exception(message)
+            continue
         # ファイル出力
         speech_md_file = SpeechTextWriter(filepath=result_filepath)
         if config.force:
@@ -198,6 +223,7 @@ def _main() -> None:
         _logger.info(f"save speech text: {dst_filepath}")
         shutil.copy(result_filepath, dst_filepath)
         # 中間ファイルを削除
+        _logger.info(f"remove intermediate files: {result_filepath}, {interim_dir}, {processed_dir}")
         shutil.rmtree(interim_dir)
         result_filepath.unlink()
         shutil.rmtree(processed_dir)

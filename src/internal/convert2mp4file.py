@@ -5,23 +5,19 @@ from pathlib import Path
 _logger = logging.getLogger(__name__)
 
 
-class ConvertToWavFile:
-    """指定したファイルをwav 16bitに変換する."""
+class ConvertToMp4File:
+    """指定したファイルをmp4に変換する."""
 
     def __init__(self, output_dir: Path) -> None:
         self._output_dir = output_dir
 
     def convert(self, filepath: Path) -> Path:
-        output_filepath = self._output_dir / f"{filepath.stem}.wav"
+        output_filepath = self._output_dir / f"{filepath.stem}.mp4"
         command_args = [
             "ffmpeg",
             "-y",  # 既存ファイルが存在する場合などで入力が必要となる部分を全てYesで進める
             "-i",
             f"{str(filepath.resolve())}",
-            "-ar",
-            "16000",
-            "-c:a",
-            "pcm_s16le",
             str(output_filepath.resolve()),
         ]
         proc = subprocess.Popen(
