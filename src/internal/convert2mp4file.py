@@ -27,7 +27,7 @@ class ConvertToMp4File:
             stderr=subprocess.PIPE,
         )
         try:
-            result, error = proc.communicate(timeout=1800)
+            result, error = proc.communicate(timeout=3600)
             if proc.returncode != 0:
                 _logger.error(f"command failed with exit status {proc.returncode}")
                 _logger.error(error)
