@@ -1,4 +1,5 @@
 """フォルダ内を探索して音声ファイルに対して文字起こしを実施する."""
+
 import logging
 import shutil
 import sys
@@ -136,7 +137,7 @@ def _main() -> None:
     _logger.info(config)
 
     filepath_list = config.root_dir.glob("**/*")
-    allowed_suffix = [".mp4", ".mkv"]
+    allowed_suffix = [".mp4", ".mkv", ".mov"]
     for filepath in filepath_list:
         # 特定拡張子のファイルのみ処理対象とする
         if filepath.is_dir():
@@ -211,7 +212,9 @@ def _main() -> None:
                 force=config.force,
             )
         except Exception:
-            message = "Unexpected error occurred while integrating text. skip this file."
+            message = (
+                "Unexpected error occurred while integrating text. skip this file."
+            )
             _logger.exception(message)
             continue
         # ファイル出力
@@ -223,7 +226,9 @@ def _main() -> None:
         _logger.info(f"save speech text: {dst_filepath}")
         shutil.copy(result_filepath, dst_filepath)
         # 中間ファイルを削除
-        _logger.info(f"remove intermediate files: {result_filepath}, {interim_dir}, {processed_dir}")
+        _logger.info(
+            f"remove intermediate files: {result_filepath}, {interim_dir}, {processed_dir}"
+        )
         shutil.rmtree(interim_dir)
         result_filepath.unlink()
         shutil.rmtree(processed_dir)
@@ -231,7 +236,9 @@ def _main() -> None:
 
 def _parse_args() -> _RunConfig:
     """スクリプト実行のための引数を読み込む."""
-    parser = ArgumentParser(description="pyannote-audio v3を利用して話者分離を実施する.")
+    parser = ArgumentParser(
+        description="pyannote-audio v3を利用して話者分離を実施する."
+    )
 
     parser.add_argument("root_dir", help="文字起こしする音源を探索するルートフォルダ.")
     parser.add_argument(
@@ -243,10 +250,17 @@ def _parse_args() -> _RunConfig:
     )
 
     parser.add_argument(
-        "-f", "--force", action="store_true", help="算出済みの結果を無視して実行するかどうか."
+        "-f",
+        "--force",
+        action="store_true",
+        help="算出済みの結果を無視して実行するかどうか.",
     )
     parser.add_argument(
-        "-v", "--verbose", action="count", default=0, help="詳細メッセージのレベルを設定."
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="詳細メッセージのレベルを設定.",
     )
 
     args = parser.parse_args()
